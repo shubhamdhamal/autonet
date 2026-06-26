@@ -11,3 +11,9 @@ class NotificationRead(BaseModel):
     title: str
     message: str
     created_at: datetime
+
+
+class TelegramStatus(BaseModel):
+    enabled: bool
+    configured: bool
+    chat_id: str | None = None

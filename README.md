@@ -146,6 +146,22 @@ Incidents are created when **either** condition holds for **3 consecutive** 30-s
 - No duplicate open incidents per device
 - Auto-closed when metrics return to normal
 - Console notification printed on creation
+- **Telegram alerts** (optional) with detailed incident info — see [docs/TELEGRAM_SETUP.md](docs/TELEGRAM_SETUP.md)
+
+## Telegram Notifications
+
+When `TELEGRAM_ENABLED=true`, the system sends a detailed HTML message to your Telegram chat on every new incident:
+
+- Incident number, severity, status
+- Device name, IP, type, location, simulation profile
+- Packet loss, latency, jitter, response time
+- Root cause and breach trigger details
+- Timestamps in IST and UTC
+
+```bash
+# Test after configuring .env
+curl -X POST http://localhost:8000/api/v1/notifications/telegram/test
+```
 
 ## API Endpoints
 
@@ -163,6 +179,8 @@ Incidents are created when **either** condition holds for **3 consecutive** 30-s
 | GET | `/api/v1/dashboard` | Dashboard data |
 | GET | `/api/v1/statistics` | Network statistics |
 | GET | `/api/v1/notifications` | Notification log |
+| GET | `/api/v1/notifications/telegram/status` | Telegram config status |
+| POST | `/api/v1/notifications/telegram/test` | Send test Telegram message |
 
 ## Network Health Score
 

@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     monitor_timeout_seconds: float = 1.0
     simulation_mode_default: str = "normal"
 
+    telegram_enabled: bool = False
+    telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
+    telegram_parse_mode: str = "HTML"
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 

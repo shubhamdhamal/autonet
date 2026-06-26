@@ -11,6 +11,10 @@ services:
       - MONITOR_INTERVAL_SECONDS=30
       - MONITOR_PROBE_COUNT=4
       - MONITOR_TIMEOUT_SECONDS=1.0
+      - TELEGRAM_ENABLED=${TELEGRAM_ENABLED:-false}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - TELEGRAM_PARSE_MODE=${TELEGRAM_PARSE_MODE:-HTML}
     volumes:
       - ./database:/app/database
     restart: unless-stopped

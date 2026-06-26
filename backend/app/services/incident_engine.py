@@ -6,18 +6,13 @@ from sqlalchemy.orm import Session
 from app.models.device import Device, DeviceStatus
 from app.models.incident import Incident, IncidentStatus
 from app.models.monitoring_log import MonitoringLog
-from app.models.notification import Notification
 from app.repositories.device import DeviceRepository
 from app.repositories.incident import IncidentRepository
 from app.repositories.monitoring import MonitoringRepository
-from app.repositories.notification import NotificationRepository
+from app.services.notifications.dispatcher import NotificationDispatcher
 from app.services.simulation import ProbeResult, probe_device
 
-logger = logging.getLogger(__name__)
-
-BREACH_PACKET_LOSS = 10.0
-BREACH_LATENCY = 200.0
-CONSECUTIVE_CYCLES = 3
+from app.core.constants import BREACH_LATENCY, BREACH_PACKET_LOSS, CONSECUTIVE_CYCLES
 
 
 def _is_breach(result: ProbeResult) -> bool:
@@ -47,34 +42,13 @@ def _root_cause(result: ProbeResult) -> str:
     return "; ".join(causes)
 
 
-def _print_notification(incident: Incident, device: Device) -> None:
-    banner = "=" * 72
-    message = (
-        f"\n{banner}\n"
-        f"  NOC ALERT | NEW INCIDENT\n"
-        f"{banner}\n"
-        f"  Incident : {incident.incident_number}\n"
-        f"  Device   : {device.name} ({device.ip_address})\n"
-        f"  Location : {device.location}\n"
-        f"  Severity : {incident.severity}\n"
-        f"  Loss     : {incident.packet_loss}%\n"
-        f"  Latency  : {incident.latency}ms\n"
-        f"  Jitter   : {incident.jitter}ms\n"
-        f"  Cause    : {incident.root_cause}\n"
-        f"  Time     : {incident.created_at.isoformat()}Z\n"
-        f"{banner}\n"
-    )
-    print(message)
-    logger.info("Incident created: %s for device %s", incident.incident_number, device.name)
-
-
 class IncidentEngine:
     def __init__(self, db: Session) -> None:
         self.db = db
         self.device_repo = DeviceRepository(db)
         self.monitoring_repo = MonitoringRepository(db)
         self.incident_repo = IncidentRepository(db)
-        self.notification_repo = NotificationRepository(db)
+        self.notification_dispatcher = NotificationDispatcher(db)
 
     def process_device_result(self, device: Device, result: ProbeResult) -> None:
         log = MonitoringLog(
@@ -112,17 +86,7 @@ class IncidentEngine:
                 root_cause=_root_cause(result),
             )
             created = self.incident_repo.create(incident)
-            _print_notification(created, device)
-            self.notification_repo.create(
-                Notification(
-                    channel="console",
-                    title=f"New Incident {created.incident_number}",
-                    message=(
-                        f"{device.name} ({device.ip_address}) - {created.severity}: "
-                        f"{created.root_cause}"
-                    ),
-                )
-            )
+            self.notification_dispatcher.notify_incident_created(created, device, result)
 
         elif open_incident and not _is_breach(result):
             open_incident.status = IncidentStatus.auto_closed
