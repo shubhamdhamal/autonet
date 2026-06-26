@@ -4,7 +4,7 @@ import { api } from '../api/client'
 import MetricChart from '../components/MetricChart'
 import StatusBadge from '../components/StatusBadge'
 import StatusCard from '../components/StatusCard'
-import { formatDate, healthScoreColor } from '../utils/helpers'
+import { formatDate, formatTime, healthScoreColor } from '../utils/helpers'
 
 export default function Dashboard() {
   const [data, setData] = useState(null)
@@ -30,7 +30,7 @@ export default function Dashboard() {
   if (!data) return <p className="text-slate-400">Loading NOC dashboard...</p>
 
   const { summary, trends, recent_incidents, device_status, top_problem_devices } = data
-  const labels = trends.map((t) => new Date(t.timestamp).toLocaleTimeString())
+  const labels = trends.map((t) => formatTime(t.timestamp))
 
   return (
     <div className="space-y-6">

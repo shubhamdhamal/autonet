@@ -1,3 +1,5 @@
+export const APP_TIMEZONE = 'Asia/Kolkata'
+
 export const statusColor = (status) => {
   const map = {
     Healthy: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/30',
@@ -21,7 +23,33 @@ export const healthScoreColor = (score) => {
 
 export const formatDate = (value) => {
   if (!value) return '—'
-  return new Date(value).toLocaleString()
+  const normalized = typeof value === 'string' && !value.endsWith('Z') && !value.includes('+')
+    ? `${value}Z`
+    : value
+  return new Date(normalized).toLocaleString('en-IN', {
+    timeZone: APP_TIMEZONE,
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  })
+}
+
+export const formatTime = (value) => {
+  if (!value) return '—'
+  const normalized = typeof value === 'string' && !value.endsWith('Z') && !value.includes('+')
+    ? `${value}Z`
+    : value
+  return new Date(normalized).toLocaleTimeString('en-IN', {
+    timeZone: APP_TIMEZONE,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  })
 }
 
 export const simulationProfiles = [
