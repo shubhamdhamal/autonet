@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -50,5 +50,43 @@ def monitoring_status(db: Session = Depends(get_db)) -> MonitoringStatus:
 
 @router.post("/run-now")
 def run_monitoring_now() -> dict[str, str]:
-    run_monitoring_job()
+    if not run_monitoring_job():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Monitoring cycle failed. Check docker compose logs backend.",
+        )
     return {"status": "ok", "message": "Monitoring cycle completed"}
+
+
+@router.get("/debug")
+def monitoring_debug(db: Session = Depends(get_db)) -> dict:
+    device_repo = DeviceRepository(db)
+    incident_repo = IncidentRepository(db)
+    monitoring_repo = MonitoringRepository(db)
+
+    devices = []
+    for device in device_repo.list_monitored():
+        open_incident = incident_repo.get_open_for_device(device.id)
+        latest = monitoring_repo.get_latest_for_device(device.id)
+        devices.append(
+            {
+                "id": device.id,
+                "name": device.name,
+                "ip": device.ip_address,
+                "simulation_profile": device.simulation_profile.value,
+                "monitoring_enabled": device.monitoring_enabled,
+                "consecutive_breach_count": device.consecutive_breach_count,
+                "current_status": device.current_status.value,
+                "open_incident": open_incident.incident_number if open_incident else None,
+                "cycles_until_incident": max(0, 3 - device.consecutive_breach_count),
+                "latest_packet_loss": latest.packet_loss if latest else None,
+                "latest_latency": latest.avg_latency if latest else None,
+            }
+        )
+
+    return {
+        "scheduler_running": scheduler.running,
+        "open_incidents": incident_repo.count_open(),
+        "total_logs": monitoring_repo.count_all(),
+        "devices": devices,
+    }

@@ -14,6 +14,8 @@ from app.services.simulation import ProbeResult, probe_device
 
 from app.core.constants import BREACH_LATENCY, BREACH_PACKET_LOSS, CONSECUTIVE_CYCLES
 
+logger = logging.getLogger(__name__)
+
 
 def _is_breach(result: ProbeResult) -> bool:
     return result.packet_loss > BREACH_PACKET_LOSS or result.avg_latency > BREACH_LATENCY

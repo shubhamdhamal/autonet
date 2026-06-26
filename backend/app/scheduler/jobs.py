@@ -10,12 +10,14 @@ logger = logging.getLogger(__name__)
 scheduler = BackgroundScheduler()
 
 
-def run_monitoring_job() -> None:
+def run_monitoring_job() -> bool:
     db = SessionLocal()
     try:
         MonitoringService(db).run_cycle()
+        return True
     except Exception:
         logger.exception("Scheduled monitoring job failed")
+        return False
     finally:
         db.close()
 
