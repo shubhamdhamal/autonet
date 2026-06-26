@@ -1,3 +1,4 @@
+import html
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
@@ -15,6 +16,10 @@ def _format_dt(dt: datetime) -> tuple[str, str]:
     utc_str = dt.astimezone(timezone.utc).strftime("%d %b %Y, %I:%M:%S %p UTC")
     ist_str = dt.astimezone(IST).strftime("%d %b %Y, %I:%M:%S %p IST")
     return utc_str, ist_str
+
+
+def _escape(value: object) -> str:
+    return html.escape(str(value), quote=False)
 
 
 def _severity_emoji(severity: str) -> str:
@@ -58,24 +63,24 @@ def format_incident_telegram_html(incident: Incident, device: Device, result: Pr
 
     return (
         f"{emoji} <b>NOC ALERT — NEW INCIDENT</b>\n\n"
-        f"<b>Incident:</b> {incident.incident_number}\n"
-        f"<b>Status:</b> {incident.status.value}\n"
-        f"<b>Severity:</b> {incident.severity}\n\n"
+        f"<b>Incident:</b> {_escape(incident.incident_number)}\n"
+        f"<b>Status:</b> {_escape(incident.status.value)}\n"
+        f"<b>Severity:</b> {_escape(incident.severity)}\n\n"
         f"<b>Device</b>\n"
-        f"• Name: {device.name}\n"
-        f"• IP: <code>{device.ip_address}</code>\n"
-        f"• Type: {device.device_type}\n"
-        f"• Location: {device.location}\n"
-        f"• Simulation: {device.simulation_profile.value}\n\n"
+        f"• Name: {_escape(device.name)}\n"
+        f"• IP: <code>{_escape(device.ip_address)}</code>\n"
+        f"• Type: {_escape(device.device_type)}\n"
+        f"• Location: {_escape(device.location)}\n"
+        f"• Simulation: {_escape(device.simulation_profile.value)}\n\n"
         f"<b>Network Metrics</b>\n"
         f"• Packet Loss: <b>{incident.packet_loss}%</b>\n"
         f"• Latency (avg): <b>{incident.latency} ms</b>\n"
         f"• Latency (min/max): {result.min_latency} / {result.max_latency} ms\n"
         f"• Jitter: <b>{incident.jitter} ms</b>\n"
         f"• Response Time: {result.response_time} ms\n"
-        f"• Device Status: {result.status.value}\n\n"
+        f"• Device Status: {_escape(result.status.value)}\n\n"
         f"<b>Root Cause</b>\n"
-        f"{incident.root_cause}\n\n"
+        f"{_escape(incident.root_cause)}\n\n"
         f"<b>Trigger</b>\n"
         f"Breach detected for <b>{CONSECUTIVE_CYCLES}</b> consecutive monitoring cycles "
         f"(~{CONSECUTIVE_CYCLES * 30}s)\n\n"

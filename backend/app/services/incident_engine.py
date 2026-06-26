@@ -86,7 +86,13 @@ class IncidentEngine:
                 root_cause=_root_cause(result),
             )
             created = self.incident_repo.create(incident)
-            self.notification_dispatcher.notify_incident_created(created, device, result)
+            try:
+                self.notification_dispatcher.notify_incident_created(created, device, result)
+            except Exception:
+                logger.exception(
+                    "Notification failed for incident %s; incident was still created",
+                    created.incident_number,
+                )
 
         elif open_incident and not _is_breach(result):
             open_incident.status = IncidentStatus.auto_closed
