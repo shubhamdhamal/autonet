@@ -62,3 +62,10 @@ export const simulationProfiles = [
 ]
 
 export const deviceTypes = ['Router', 'Switch', 'Firewall', 'Access Point', 'Server', 'Load Balancer']
+
+export const formatDeviceDetail = (incident) => {
+  if (!incident?.device_name) return 'Unknown device'
+  const ip = incident.device_ip ? ` (${incident.device_ip})` : ''
+  const location = incident.device_location ? ` — ${incident.device_location}` : ''
+  return `${incident.device_name}${ip}${location}`
+}

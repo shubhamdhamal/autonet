@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom'
 import { api } from '../api/client'
 import SortableHeader from '../components/SortableHeader'
 import StatusBadge from '../components/StatusBadge'
-import { formatDate } from '../utils/helpers'
+import { formatDate, formatDeviceDetail } from '../utils/helpers'
 
 const EMPTY_FILTERS = {
   incident_number: '',
-  device_id: '',
+  device: '',
   severity: '',
   status: '',
   packet_loss: '',
@@ -18,43 +18,38 @@ const EMPTY_FILTERS = {
 const SEVERITY_ORDER = { Critical: 0, Major: 1, Warning: 2, Healthy: 3 }
 const STATUS_ORDER = { Open: 0, Resolved: 1, Closed: 2, 'Auto Closed': 3 }
 
-function compareValues(a, b, column, direction) {
-  let valA = a[column]
-  let valB = b[column]
+function getSortValue(incident, column) {
+  if (column === 'device') return formatDeviceDetail(incident).toLowerCase()
+  if (column === 'created_at') return new Date(incident.created_at).getTime()
+  if (column === 'severity') return SEVERITY_ORDER[incident.severity] ?? 99
+  if (column === 'status') return STATUS_ORDER[incident.status] ?? 99
+  if (column === 'packet_loss' || column === 'latency') return Number(incident[column])
+  return String(incident[column] ?? '').toLowerCase()
+}
 
-  if (column === 'created_at') {
-    valA = new Date(valA).getTime()
-    valB = new Date(valB).getTime()
-  } else if (column === 'severity') {
-    valA = SEVERITY_ORDER[valA] ?? 99
-    valB = SEVERITY_ORDER[valB] ?? 99
-  } else if (column === 'status') {
-    valA = STATUS_ORDER[valA] ?? 99
-    valB = STATUS_ORDER[valB] ?? 99
-  } else if (column === 'device_id' || column === 'packet_loss' || column === 'latency') {
-    valA = Number(valA)
-    valB = Number(valB)
-  } else {
-    valA = String(valA ?? '').toLowerCase()
-    valB = String(valB ?? '').toLowerCase()
-  }
+function compareValues(a, b, column, direction) {
+  const valA = getSortValue(a, column)
+  const valB = getSortValue(b, column)
 
   if (valA < valB) return direction === 'asc' ? -1 : 1
   if (valA > valB) return direction === 'asc' ? 1 : -1
   return 0
 }
 
-function matchesFilter(value, filter, column) {
+function matchesFilter(incident, column, filter) {
   if (!filter.trim()) return true
   const query = filter.trim().toLowerCase()
 
-  if (column === 'device_id' || column === 'packet_loss' || column === 'latency') {
-    return String(value).includes(query)
+  if (column === 'device') {
+    return formatDeviceDetail(incident).toLowerCase().includes(query)
+  }
+  if (column === 'packet_loss' || column === 'latency') {
+    return String(incident[column]).includes(query)
   }
   if (column === 'created_at') {
-    return formatDate(value).toLowerCase().includes(query)
+    return formatDate(incident.created_at).toLowerCase().includes(query)
   }
-  return String(value ?? '').toLowerCase().includes(query)
+  return String(incident[column] ?? '').toLowerCase().includes(query)
 }
 
 export default function Incidents() {
@@ -98,7 +93,7 @@ export default function Incidents() {
 
   const displayedIncidents = useMemo(() => {
     let rows = incidents.filter((inc) =>
-      Object.entries(columnFilters).every(([col, filter]) => matchesFilter(inc[col], filter, col)),
+      Object.entries(columnFilters).every(([col, filter]) => matchesFilter(inc, col, filter)),
     )
 
     if (sortColumn) {
@@ -144,7 +139,7 @@ export default function Incidents() {
           <thead className="text-slate-400 text-left">
             <tr>
               <SortableHeader label="Incident #" column="incident_number" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
-              <SortableHeader label="Device ID" column="device_id" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
+              <SortableHeader label="Device" column="device" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
               <SortableHeader label="Severity" column="severity" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
               <SortableHeader label="Status" column="status" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
               <SortableHeader label="Packet Loss" column="packet_loss" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
@@ -157,7 +152,7 @@ export default function Incidents() {
                 <input className={filterInputClass} placeholder="Filter..." value={columnFilters.incident_number} onChange={(e) => updateFilter('incident_number', e.target.value)} />
               </th>
               <th className="py-2 pr-2">
-                <input className={filterInputClass} placeholder="Filter..." value={columnFilters.device_id} onChange={(e) => updateFilter('device_id', e.target.value)} />
+                <input className={filterInputClass} placeholder="Name, IP, location..." value={columnFilters.device} onChange={(e) => updateFilter('device', e.target.value)} />
               </th>
               <th className="py-2 pr-2">
                 <input className={filterInputClass} placeholder="Filter..." value={columnFilters.severity} onChange={(e) => updateFilter('severity', e.target.value)} />
@@ -181,7 +176,7 @@ export default function Incidents() {
             {displayedIncidents.map((inc) => (
               <tr key={inc.id} className="table-row">
                 <td className="py-2 font-medium">{inc.incident_number}</td>
-                <td>{inc.device_id}</td>
+                <td className="py-2 text-slate-200">{formatDeviceDetail(inc)}</td>
                 <td><StatusBadge status={inc.severity} /></td>
                 <td><StatusBadge status={inc.status} /></td>
                 <td>{inc.packet_loss}%</td>

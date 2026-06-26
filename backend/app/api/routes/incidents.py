@@ -7,7 +7,7 @@ from app.db.session import get_db
 from app.models.incident import IncidentStatus
 from app.repositories.device import DeviceRepository
 from app.repositories.incident import IncidentRepository
-from app.schemas.incident import IncidentClose, IncidentDetail, IncidentRead, IncidentResolve
+from app.schemas.incident import IncidentClose, IncidentDetail, IncidentResolve
 
 router = APIRouter()
 
@@ -33,12 +33,18 @@ def _to_detail(incident, device=None) -> IncidentDetail:
     )
 
 
-@router.get("", response_model=list[IncidentRead])
+@router.get("", response_model=list[IncidentDetail])
 def list_incidents(
     status_filter: IncidentStatus | None = None,
     db: Session = Depends(get_db),
-) -> list:
-    return IncidentRepository(db).list_all(status=status_filter)
+) -> list[IncidentDetail]:
+    incident_repo = IncidentRepository(db)
+    device_repo = DeviceRepository(db)
+    incidents = incident_repo.list_all(status=status_filter)
+    return [
+        _to_detail(incident, device_repo.get(incident.device_id))
+        for incident in incidents
+    ]
 
 
 @router.get("/{incident_id}", response_model=IncidentDetail)
