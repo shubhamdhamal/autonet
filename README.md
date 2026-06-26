@@ -35,6 +35,26 @@ networking/
 └── README.md
 ```
 
+## Environment files
+
+| File | Purpose | Commit to Git? |
+|------|---------|----------------|
+| `.env.example` | Template with placeholder values | **Yes** |
+| `.env` | Your real secrets (Telegram token, etc.) | **Never** |
+
+Docker Compose and the backend read **`.env` only**. Deleting `.env` disables Telegram because variables fall back to empty/disabled defaults.
+
+**On your server (one-time setup):**
+
+```bash
+cd ~/networking
+cp .env.example .env
+nano .env   # set TELEGRAM_ENABLED=true and your real token/chat ID
+docker compose up --build -d
+```
+
+**Never delete `.env` on the server** — keep it alongside the project (it is gitignored).
+
 ## Quick Start (Docker)
 
 ```bash

@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: docker/Dockerfile.backend
     container_name: noc-backend
+    env_file:
+      - .env
     ports:
       - "8000:8000"
     environment:
