@@ -81,6 +81,25 @@ export default function Devices() {
         </button>
       </div>
 
+      <div className="card border-blue-500/20 bg-blue-950/20 text-sm text-slate-300">
+        <p className="font-semibold text-blue-300 mb-2">How monitoring works (no device login required)</p>
+        <p className="mb-2">
+          This NOC server uses <strong className="text-slate-100">active ICMP ping monitoring</strong> — the same idea as running
+          {' '}<code className="text-blue-300">ping 8.8.8.8</code> from a terminal. Every <strong className="text-slate-100">30 seconds</strong>,
+          the server sends <strong className="text-slate-100">4 pings</strong> to each device IP and calculates:
+        </p>
+        <ul className="list-disc list-inside space-y-1 text-slate-400 mb-2">
+          <li><strong className="text-slate-300">Latency</strong> — round-trip time of ping replies (ms)</li>
+          <li><strong className="text-slate-300">Packet loss</strong> — percentage of pings with no reply</li>
+          <li><strong className="text-slate-300">Jitter</strong> — variation in latency between consecutive pings</li>
+        </ul>
+        <p className="text-slate-400">
+          No SSH, SNMP, or router credentials are needed. <strong className="text-slate-300">Normal</strong> profile uses real pings;
+          <strong className="text-slate-300"> simulation profiles</strong> generate fake metrics for demo/testing without contacting a real device.
+          This measures reachability <em>to</em> an IP, not internal device health (CPU, interfaces, etc.).
+        </p>
+      </div>
+
       <div className="card overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-slate-400 text-left">

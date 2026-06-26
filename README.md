@@ -85,6 +85,57 @@ Set a device's **Simulation Profile** when creating/editing:
 
 Pre-seeded lab devices (`Sim-High-Loss`, `Sim-High-Latency`, `Sim-Random`) will generate incidents within ~90 seconds.
 
+## How Monitoring Works
+
+This system uses **active monitoring** from the NOC server — **no login to the target device is required**.
+
+```
+[NOC Server]  ----ICMP ping---->  [Device IP]
+      ↑
+  measures reply time, drops, jitter
+```
+
+### What happens every 30 seconds
+
+For each device with monitoring enabled:
+
+1. Send **4 ICMP pings** to the device's IP address (via `ping3`)
+2. Record round-trip time for each reply → **latency**
+3. Count unanswered pings → **packet loss** (%)
+4. Measure variation between ping times → **jitter**
+5. Store results in `monitoring_logs` and evaluate incident rules
+
+### Normal vs simulation devices
+
+| Type | Profile | How metrics are obtained |
+|------|---------|--------------------------|
+| Real targets | `normal` | Actual ICMP ping to the IP (e.g. `8.8.8.8`, `1.1.1.1`) |
+| Demo/lab | `packet_loss_20`, `high_latency`, etc. | **Simulated** metrics — no real device contacted |
+
+### What you measure vs what you don't
+
+| With ping only (this app) | Requires SNMP/SSH login |
+|---------------------------|-------------------------|
+| Reachability to an IP | CPU / memory usage |
+| Round-trip latency | Interface error counters |
+| Packet loss & jitter | Routing tables, config |
+| Path quality from NOC server | Per-port traffic stats |
+
+### Monitoring timing
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `MONITOR_INTERVAL_SECONDS` | 30 | Full monitoring cycle interval |
+| `MONITOR_PROBE_COUNT` | 4 | Pings per device per cycle |
+| `MONITOR_TIMEOUT_SECONDS` | 1.0 | Max wait per ping |
+| Incident threshold | 3 cycles | ~90 seconds of breach before incident |
+
+### Limitations
+
+- Many firewalls **block ICMP** — device may show as down even when HTTP/SSH works
+- You measure reachability **to an IP**, not internal device health
+- Pinging a public IP (e.g. `8.8.8.8`) tests **your server's path to the internet**, not your office router unless you ping the router's IP
+
 ## Incident Rules
 
 Incidents are created when **either** condition holds for **3 consecutive** 30-second cycles:
